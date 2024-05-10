@@ -1,0 +1,22 @@
+<header class="sticky top-0 z-50">
+  <.navbar>
+    <:logo>
+      <.link navigate="/" class="flex items-center">
+        <.logo />
+      </.link>
+    </:logo>
+    <:link label="Home" to={~p"/home"} />
+    <:link label="About" to={~p"/home"} />
+  </.navbar>
+</header>
+
+<main class="relative">
+  <div class="flex items-center justify-center">
+    <div class="w-2/12"></div>
+    <div class="w-8/12 mx-auto">
+      <.flash_group flash={@flash} />
+      <%= @inner_content %>
+    </div>
+    <div class="w-2/12"></div>
+  </div>
+</main>
