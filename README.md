@@ -26,7 +26,7 @@ Create an SSH key pair named, e. g. `calori-web-ec2` by visiting the [AWS Key Pa
 Ensure you have access to the following secrets for storage in AWS Secrets Manager:
 
  - CALORI_SECRET_KEY_BASE
- - ERLANG_COOKIE
+ - CALORI_ERLANG_COOKIE
 
 ### 3. CALORI_PHX_HOST Configuration
 
@@ -54,7 +54,7 @@ Wait for the environment to be created. Afterward, update the variables in the *
 ```bash
 # Update the secrets
 CALORI_SECRET_KEY_BASE=xxxxxxxxxx
-ERLANG_COOKIE=xxxxxxxxxx
+CALORI_ERLANG_COOKIE=xxxxxxxxxx
 ```
 
 Additionally, create the TLS certificates for the OTP distribution using the [Deployex app](https://github.com/thiagoesteves/deployex?tab=readme-ov-file#enhancing-otp-distribution-security-with-mtls)
@@ -168,6 +168,15 @@ sudo apt install snapd
 sudo snap install --classic certbot
 sudo ln -s /snap/bin/certbot /usr/bin/certbot
 sudo certbot --nginx
+```
+
+Nginx will automatically generate certificates and modify your configuration files during installation. After installation, verify if the contents of the nginx configuration file match those specified in the original [nginx file ](devops/terraform/modules/standard-account/cloud-config.tpl). If any discrepancies are found, edit the file accordingly and restart Nginx to apply the changes.
+
+```bash
+sudo su
+vi /etc/nginx/sites-available/default
+# modify and save file
+systemctl reload nginx
 ```
 
 The comands above will modify nginx file for the correct routing. Once it is all set, you need to check if the [runtime.exs](apps/calori/config/runtime.exs) is pointing to the correct SCHEME/HOST/PORT, e. g.:

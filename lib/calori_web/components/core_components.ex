@@ -702,7 +702,10 @@ defmodule CaloriWeb.CoreComponents do
   end
 
   slot :logo
-  slot :link, default: [%{__slot__: :link, inner_block: nil, label: "Home", to: "/home"}]
+  slot(:link, required: true) do
+    attr :to, :string
+    attr :label, :string
+  end
 
   @doc """
   Copied/Modified from https://fullstackphoenix.com/tutorials/tailwind-navbar-new-liveview-0-18-components

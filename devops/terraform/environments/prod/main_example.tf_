@@ -9,4 +9,5 @@ module "standard_account" {
   source       = "../../modules/standard-account"
   account_name = "stage"
   server_dns   = "example.com"
+  deployex_dns = "deployex.example.com"
 }

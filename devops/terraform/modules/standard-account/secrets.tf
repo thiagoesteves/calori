@@ -9,6 +9,13 @@ locals {
   }
 }
 
+resource "aws_secretsmanager_secret" "deployex_secrets" {
+  name                    = "deployex-${var.account_name}-secrets"
+  description             = "All Deployex Secrets"
+  recovery_window_in_days = 0
+  tags = local.secret_tag
+}
+
 resource "aws_secretsmanager_secret" "calori_secrets" {
   name                    = "calori-${var.account_name}-secrets"
   description             = "All Calori Secrets"
@@ -55,6 +62,7 @@ resource "aws_iam_policy" "calori_secrets_manager_policy" {
           aws_secretsmanager_secret.calori_otp_tls_ca.arn,
           aws_secretsmanager_secret.calori_otp_tls_key.arn,
           aws_secretsmanager_secret.calori_otp_tls_crt.arn,
+          aws_secretsmanager_secret.deployex_secrets.arn,
         ],
       },
     ],

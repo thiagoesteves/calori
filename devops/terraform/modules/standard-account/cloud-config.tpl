@@ -22,7 +22,7 @@ write_files:
       # Check if the version was passed as an argument
       if [ -z "$1" ]; then
           # If not passed, use the default value
-          VERSION="0.1.0"
+          VERSION="0.2.0"
       else
           # If passed, use the passed value
           VERSION="$1"
@@ -62,7 +62,7 @@ write_files:
       echo "Retrieving and saving ......"
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-ca | jq -r .SecretString > /usr/local/share/ca-certificates/ca.crt
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-key | jq -r .SecretString > /usr/local/share/ca-certificates/deployex.key
-      aws secretsmanager get-secret-value --secret-id holidex-${account_name}-otp-tls-key | jq -r .SecretString > /usr/local/share/ca-certificates/calori.key
+      aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-key | jq -r .SecretString > /usr/local/share/ca-certificates/calori.key
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/deployex.crt
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/calori.crt
       echo "[OK]"
@@ -108,31 +108,81 @@ write_files:
     owner: root:root
     permissions: "0644"
     content: |
-        upstream phoenix {
-            server 127.0.0.1:4000 max_fails=5 fail_timeout=60s;
-        }
-      
-        server {
-            server_name  ${hostname};
-            listen 80;
+      upstream phoenix {
+          server 127.0.0.1:4000 max_fails=5 fail_timeout=60s;
+      }
 
-            client_max_body_size 30M;
-            location / {
-                allow all;
+      upstream deployex {
+          server 127.0.0.1:5001 max_fails=5 fail_timeout=60s;
+      }
 
-                # Proxy Headers
-                proxy_http_version 1.1;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header Host $http_host;
-                proxy_set_header X-Cluster-Client-Ip $remote_addr;
+      server {
+          listen 80;
+          server_name calori.com.br deployex.calori.com.br;
 
-                # The Important Websocket Bits!
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
+          if ($host = calori.com.br) {
+              return 301 https://$host$request_uri;
+          } # managed by Certbot
 
-                proxy_pass http://phoenix;
-            }
-        }
+
+          if ($host = deployex.calori.com.br) {
+              return 301 https://$host$request_uri;
+          } # managed by Certbot
+
+          return 404; # managed by Certbot
+      }
+
+      server {
+          server_name  deployex.calori.com.br;
+
+          client_max_body_size 30M;
+          location / {
+              allow all;
+
+              # Proxy Headers
+              proxy_http_version 1.1;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header Host $http_host;
+              proxy_set_header X-Cluster-Client-Ip $remote_addr;
+
+              # The Important Websocket Bits!
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+
+              proxy_pass http://deployex;
+          }
+
+          ssl_certificate /etc/letsencrypt/live/calori.com.br/fullchain.pem; # managed by Certbot
+          ssl_certificate_key /etc/letsencrypt/live/calori.com.br/privkey.pem; # managed by Certbot
+          include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+          ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+      }
+
+      server {
+          server_name  calori.com.br;
+
+          client_max_body_size 30M;
+          location / {
+              allow all;
+
+              # Proxy Headers
+              proxy_http_version 1.1;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header Host $http_host;
+              proxy_set_header X-Cluster-Client-Ip $remote_addr;
+
+              # The Important Websocket Bits!
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+
+              proxy_pass http://phoenix;
+          }
+
+          ssl_certificate /etc/letsencrypt/live/calori.com.br/fullchain.pem; # managed by Certbot
+          ssl_certificate_key /etc/letsencrypt/live/calori.com.br/privkey.pem; # managed by Certbot
+          include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+          ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+      }
   - path: /etc/systemd/system/deployex.service
     owner: root:root
     permissions: "0644"
@@ -153,6 +203,9 @@ write_files:
       Environment=DEPLOYEX_OTP_TLS_CERT_PATH=/usr/local/share/ca-certificates
       Environment=DEPLOYEX_STORAGE_ADAPTER=s3
       Environment=DEPLOYEX_MONITORED_APP_NAME=calori
+      Environment=DEPLOYEX_PHX_SERVER=true
+      Environment=DEPLOYEX_PHX_HOST=${deployex_hostname}
+      Environment=DEPLOYEX_PHX_PORT=5001
       ExecStart=/opt/deployex/bin/deployex start
       StandardOutput=append:/var/log/deployex.log
       KillMode=process

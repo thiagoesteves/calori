@@ -54,7 +54,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: "sa-east-1"
           source: '_build/prod/*.tar.gz'
-          dest: 's3://${{ secrets.S3_DIST_URL }}/dist/calori/calori-${CALORI_VERSION}.tar.gz'
+          dest: 's3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/dist/calori/calori-${CALORI_VERSION}.tar.gz'
 
       - name: Copy a version file to the s3 version folder
         uses: prewk/s3-cp-action@v2
@@ -63,4 +63,4 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: "sa-east-1"
           source: 'current.json'
-          dest: 's3://${{ secrets.S3_DIST_URL }}/versions/calori/prod/current.json'
+          dest: 's3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/versions/calori/${{ secrets.CLOUD_ENV_NAME }}/current.json'

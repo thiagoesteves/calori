@@ -46,7 +46,7 @@ defmodule Calori.AwsSecretsManagerProvider do
       secrets = fetch_aws_secret_id("calori-#{env}-secrets", request_opts)
 
       secret_key_base = keyword(:secret_key_base, secrets["CALORI_SECRET_KEY_BASE"])
-      erlang_cookie = secrets["ERLANG_COOKIE"] |> String.to_atom()
+      erlang_cookie = secrets["CALORI_ERLANG_COOKIE"] |> String.to_atom()
 
       # Config Erlang Cookie if the node exist
       node = :erlang.node()
