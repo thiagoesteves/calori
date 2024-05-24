@@ -22,9 +22,9 @@ defmodule CaloriWeb.Router do
     pipe_through :browser
 
     live_session :default do
-      live "/", AboutLive, :index
-      live "/home", AboutLive, :index
-      live "/about", AboutLive, :index
+      live "/", HomeLive, :index
+      live "/home", HomeLive, :index
+      live "/supervisor", SupervisorLive, :index
     end
   end
 

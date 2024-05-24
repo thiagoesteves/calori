@@ -6,17 +6,25 @@
       </.link>
     </:logo>
     <:link label="Home" to={~p"/home"} />
-    <:link label="About" to={~p"/home"} />
+    <:link label="Supervisor" to={~p"/supervisor"} />
   </.navbar>
 </header>
 
 <main class="relative">
   <div class="flex items-center justify-center">
     <div class="w-2/12"></div>
-    <div class="w-8/12 mx-auto">
+    <div class="w-8/12 mx-auto ">
       <.flash_group flash={@flash} />
       <%= @inner_content %>
     </div>
     <div class="w-2/12"></div>
   </div>
+
+  <footer class="bg-white">
+    <div class="w-full max-w-screen-xl mx-auto p-2 md:py-6">
+      <span class="block text-sm text-black sm:text-center">
+        © 2024 <a href="https://calori.com.br/" class="hover:underline">Calori Software</a>. All Rights Reserved.
+      </span>
+    </div>
+  </footer>
 </main>
