@@ -678,21 +678,27 @@ defmodule CaloriWeb.CoreComponents do
   @doc """
   Copied/Modified from https://fullstackphoenix.com/tutorials/tailwind-navbar-new-liveview-0-18-components
   """
-  attr :name, :string, default: "Calori App"
+  attr :name, :string, default: "Calori Software"
 
   def logo(assigns) do
     ~H"""
     <svg
-      class="w-10 h-10 p-2 mr-3 text-white rounded-full bg-primary"
+      class="w-10 h-10 p-1 mr-3 text-black rounded-full bg-white"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       stroke="currentColor"
       stroke-linecap="round"
       stroke-linejoin="round"
       stroke-width="2"
-      viewBox="0 0 24 24"
+      viewBox="-8 -4 40 40"
     >
-      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+      <g transform="translate(-291.484 -256.287)">
+        <path d="M304.462,289.851a12.976,12.976,0,0,1-5.163-24.882l.789,1.838a11,11,0,1,0,7.782-.364l.613-1.9a12.971,12.971,0,0,1-4.021,25.312Z" />
+
+        <path d="M299.7,266.884a1,1,0,0,1-1-1v-9.6h10.486v9.2a1,1,0,0,1-2,0v-7.2H300.7v7.6A1,1,0,0,1,299.7,266.884Z" />
+
+        <path d="M293.753,280.571l-1.689-1.072c.159-.251,3.989-6.123,13.419-4.129,8.031,1.7,10.357.191,10.379.177l1.225,1.58c-.276.222-2.959,2.12-12.018.2C297.054,275.623,293.883,280.368,293.753,280.571Z" />
+      </g>
     </svg>
 
     <span class="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
@@ -702,6 +708,7 @@ defmodule CaloriWeb.CoreComponents do
   end
 
   slot :logo
+
   slot(:link, required: true) do
     attr :to, :string
     attr :label, :string

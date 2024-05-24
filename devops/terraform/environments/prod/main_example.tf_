@@ -10,4 +10,5 @@ module "standard_account" {
   account_name = "stage"
   server_dns   = "example.com"
   deployex_dns = "deployex.example.com"
+  replicas     = "3"
 }

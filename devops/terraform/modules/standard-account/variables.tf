@@ -8,6 +8,16 @@ variable "server_dns" {
   nullable = false
 }
 
+variable "deployex_dns" {
+  type     = string
+  nullable = false
+}
+
+variable "replicas" {
+  type     = string
+  nullable = false
+}
+
 # ec2 key pair name
 variable "aws_key_name" {
   default = "calori-web-ec2"

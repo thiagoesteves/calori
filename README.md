@@ -156,21 +156,62 @@ In the [github actions](.github/workflows/release.yaml) files, you can check tha
 
 Tracking the `mix.exs` version is essential to allow hot-upgrades.
 
-### 7. HTTPS certificates
+### 7. Setting Up HTTPS Certificates with Let's Encrypt
 
-*__ATTENTION: For this step to work, be sure that the DNS is pointing to the EC2 instance.__*
+*__Before proceeding, ensure that the DNS is correctly pointing to the EC2 instance__*
 
 For HTTPS, the project can set Free certificates from [Let's encrypt](https://letsencrypt.org/getting-started/). In this deployment, we are going to use the [cert bot for ubuntu](https://certbot.eff.org/instructions?ws=nginx&os=ubuntufocal):
 
 ```bash
-sudo apt update
-sudo apt install snapd
-sudo snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/bin/certbot
-sudo certbot --nginx
+sudo su
+apt update
+apt install snapd
+snap install --classic certbot
+ln -s /snap/bin/certbot /usr/bin/certbot
+certbot --nginx
 ```
 
-Nginx will automatically generate certificates and modify your configuration files during installation. After installation, verify if the contents of the nginx configuration file match those specified in the original [nginx file ](devops/terraform/modules/standard-account/cloud-config.tpl). If any discrepancies are found, edit the file accordingly and restart Nginx to apply the changes.
+This will install Certbot and automatically configure Nginx to use the obtained certificates. After Nginx finishes setup, it will create paths for the certificates. They will typically look like this:
+
+```bash
+vi /etc/nginx/sites-available/default
+...
+          ssl_certificate /etc/letsencrypt/live/calori.com.br/fullchain.pem; # managed by Certbot
+          ssl_certificate_key /etc/letsencrypt/live/calori.com.br/privkey.pem; # managed by Certbot
+          include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+          ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+```
+
+It's possible that Nginx has modified the configuration file `/etc/nginx/sites-available/default` in a way that it won't work as expected. You'll need to retrieve the original file [nginx file](devops/terraform/modules/standard-account/cloud-config.tpl) and update it with the Let's Encrypt certificate paths. Find the section where it mentions:
+
+and where it mentions:
+
+```bash
+          # Add here the letsencrypt paths
+```
+Replace this comment with the certificate paths obtained in the previous step.
+
+```bash
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+
+              proxy_pass http://deployex;
+          }
+          ssl_certificate /etc/letsencrypt/live/calori.com.br/fullchain.pem; # managed by Certbot
+          ssl_certificate_key /etc/letsencrypt/live/calori.com.br/privkey.pem; # managed by Certbot
+          include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+          ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+      }
+```
+
+Also, for both servers, re-enable port 443, e. g:
+
+```bash
+      server {
+          listen 443 ssl; # managed by Certbot
+```
+
+After modifying the configuration file, save the changes and restart Nginx:
 
 ```bash
 sudo su
@@ -178,6 +219,8 @@ vi /etc/nginx/sites-available/default
 # modify and save file
 systemctl reload nginx
 ```
+
+__PS: After the changes, It may require a reboot__
 
 The comands above will modify nginx file for the correct routing. Once it is all set, you need to check if the [runtime.exs](apps/calori/config/runtime.exs) is pointing to the correct SCHEME/HOST/PORT, e. g.:
 
@@ -202,10 +245,11 @@ Avoid the execute a hotupgrade in the following situations:
 
 #### 1. IEX shell Access to Deployex App
 
-Connecting the iex shell:
+To connect to the iex shell, you may need to export the cookie if AWS is configured with a value different from the default 'cookie', which is highly recommended to change.
 
 ```bash
 ubuntu@ip-10-0-1-56:~$ sudo su
+root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_COOKIE=COOKIE12345678912345789
 root@ip-10-0-1-56:/home/ubuntu$ /opt/deployex/bin/deployex remote
 Erlang/OTP 26 [erts-14.2.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
 
@@ -215,15 +259,16 @@ iex(deployex@ip-10-0-1-56)1>
 
 ##### 2. IEX shell Access to Calori App
 
-Connecting the iex shell:
+To connect to the iex shell, you may need to export the cookie if AWS is configured with a value different from the default 'cookie', which is highly recommended to change.
 
 ```bash
-root@ip-10-0-1-56:/home/ubuntu$ sudo -su deployex
-deployex@ip-10-0-1-56:$ /var/lib/deployex/service/calori/current/bin/calori remote
-Erlang/OTP 26 [erts-14.2.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
+ubuntu@ip-10-0-1-56:~$ sudo su
+root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_COOKIE=COOKIE12345678912345789
+root@ip-10-0-1-56:/home/ubuntu$ /var/lib/deployex/service/calori/current/bin/calori remote
+Erlang/OTP 26 [erts-14.1.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
 
 Interactive Elixir (1.16.0) - press Ctrl+C to exit (type h() ENTER for help)
-iex(calori@ip-10-0-1-56)1>
+iex(calori@ip-10-0-1-174)1>
 ```
 
 ##### 3. Logs
@@ -262,7 +307,7 @@ root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/calori-stdout.log
 
 ##### 4. Updating CALORI_PHX_HOST
 
-In case you need to update the *__CALORI_PHX_HOST__*, there are 2 files that need to be updated:  `/etc/systemd/system/deployex.service` and `/etc/nginx/sites-available/default` (you need to be `root`` user to update them).
+In case you need to update the *__CALORI_PHX_HOST__*, there are 2 files that need to be updated:  `/etc/systemd/system/deployex.service` and `/etc/nginx/sites-available/default` (you need to be `root` user to update them).
 
 ```bash
 ubuntu@ip-10-0-1-56:~$ sudo su

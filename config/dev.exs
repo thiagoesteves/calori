@@ -6,7 +6,7 @@ import Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-phx_port = String.to_integer(System.get_env("CALORI_PHX_PORT") || "4000")
+phx_port = String.to_integer(System.get_env("PORT") || "4000")
 
 config :calori, CaloriWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.

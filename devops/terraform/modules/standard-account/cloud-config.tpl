@@ -22,7 +22,7 @@ write_files:
       # Check if the version was passed as an argument
       if [ -z "$1" ]; then
           # If not passed, use the default value
-          VERSION="0.2.0"
+          VERSION="0.3.0-rc1"
       else
           # If passed, use the passed value
           VERSION="$1"
@@ -86,14 +86,14 @@ write_files:
                     "timestamp_format": "%H: %M: %S%Y%b%-d"
                 },
                 {
-                    "file_path": "/var/log/calori-stdout.log",
+                    "file_path": "/var/log/calori/calori-*-stdout.log",
                     "log_group_name": "${log_group_name}",
                     "log_stream_name": "{instance_id}-calori-stdout-log",
                     "timezone": "UTC",
                     "timestamp_format": "%H: %M: %S%Y%b%-d"
                 },
                 {
-                    "file_path": "/var/log/calori-stderr.log",
+                    "file_path": "/var/log/calori/calori-*-stderr.log",
                     "log_group_name": "${log_group_name}",
                     "log_stream_name": "{instance_id}-calori-stderr-log",
                     "timezone": "UTC",
@@ -110,6 +110,8 @@ write_files:
     content: |
       upstream phoenix {
           server 127.0.0.1:4000 max_fails=5 fail_timeout=60s;
+          server 127.0.0.1:4001 max_fails=5 fail_timeout=60s;
+          server 127.0.0.1:4002 max_fails=5 fail_timeout=60s;
       }
 
       upstream deployex {
@@ -132,10 +134,11 @@ write_files:
           return 404; # managed by Certbot
       }
 
-      server {
+      server { 
+          #listen 443 ssl; # managed by Certbot
           server_name  deployex.calori.com.br;
-
           client_max_body_size 30M;
+
           location / {
               allow all;
 
@@ -151,17 +154,15 @@ write_files:
 
               proxy_pass http://deployex;
           }
-
-          ssl_certificate /etc/letsencrypt/live/calori.com.br/fullchain.pem; # managed by Certbot
-          ssl_certificate_key /etc/letsencrypt/live/calori.com.br/privkey.pem; # managed by Certbot
-          include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-          ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+          
+          # Add here the letsencrypt paths
       }
 
       server {
+          #listen 443 ssl; # managed by Certbot
           server_name  calori.com.br;
-
           client_max_body_size 30M;
+
           location / {
               allow all;
 
@@ -177,11 +178,7 @@ write_files:
 
               proxy_pass http://phoenix;
           }
-
-          ssl_certificate /etc/letsencrypt/live/calori.com.br/fullchain.pem; # managed by Certbot
-          ssl_certificate_key /etc/letsencrypt/live/calori.com.br/privkey.pem; # managed by Certbot
-          include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-          ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+          # Add here the letsencrypt paths
       }
   - path: /etc/systemd/system/deployex.service
     owner: root:root
@@ -196,16 +193,13 @@ write_files:
       Environment=AWS_REGION=${aws_region}
       Environment=CALORI_PHX_HOST=${hostname}
       Environment=CALORI_PHX_SERVER=true
-      Environment=CALORI_PHX_PORT=4000
       Environment=CALORI_CLOUD_ENVIRONMENT=${account_name}
       Environment=CALORI_OTP_TLS_CERT_PATH=/usr/local/share/ca-certificates
       Environment=DEPLOYEX_CLOUD_ENVIRONMENT=${account_name}
       Environment=DEPLOYEX_OTP_TLS_CERT_PATH=/usr/local/share/ca-certificates
-      Environment=DEPLOYEX_STORAGE_ADAPTER=s3
       Environment=DEPLOYEX_MONITORED_APP_NAME=calori
-      Environment=DEPLOYEX_PHX_SERVER=true
       Environment=DEPLOYEX_PHX_HOST=${deployex_hostname}
-      Environment=DEPLOYEX_PHX_PORT=5001
+      Environment=DEPLOYEX_MONITORED_REPLICAS=${replicas}
       ExecStart=/opt/deployex/bin/deployex start
       StandardOutput=append:/var/log/deployex.log
       KillMode=process
@@ -232,10 +226,8 @@ runcmd:
   - mkdir /var/lib/deployex
   - chown deployex:deployex /var/lib/deployex
   - touch /var/log/deployex.log
-  - touch /var/log/calori-stdout.log
-  - touch /var/log/calori-stderr.log
-  - chown deployex:deployex /var/log/calori-stdout.log
-  - chown deployex:deployex /var/log/calori-stderr.log
+  - mkdir /var/log/calori/
+  - chown deployex:deployex /var/log/calori/
   - wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
   - dpkg -i -E ./amazon-cloudwatch-agent.deb
   - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ubuntu/config.json -s

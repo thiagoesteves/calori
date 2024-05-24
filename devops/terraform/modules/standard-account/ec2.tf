@@ -95,6 +95,7 @@ data "cloudinit_config" "server_config" {
       log_group_name = aws_cloudwatch_log_group.ec2_instance_logs.name
       account_name = "${var.account_name}"
       aws_region = "${var.aws_region}"
+      replicas = "${var.replicas}"
     })
   }
 }

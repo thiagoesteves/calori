@@ -30,7 +30,7 @@ if config_env() == :prod do
   # to check this value into version control, so we use an environment
   # variable instead.
   host = System.get_env("CALORI_PHX_HOST") || "example.com"
-  port = String.to_integer(System.fetch_env!("CALORI_PHX_PORT"))
+  port = String.to_integer(System.fetch_env!("PORT"))
 
   config :calori, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
