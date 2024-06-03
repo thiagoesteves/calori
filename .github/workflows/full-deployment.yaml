@@ -1,16 +1,18 @@
-name: Publish a release file/version to AWS
+name: Deploy a full deployment package/version to AWS
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 env:
   MIX_ENV: prod
 
 jobs:
   build:
-    name: Building Calori release and publishing it at AWS
+    name: Building a release and publishing it at AWS
     runs-on: ubuntu-20.04
     permissions:
       contents: write
@@ -27,16 +29,13 @@ jobs:
           GITHUB_SHORT_SHA=$(git rev-parse --short ${{ github.sha }})
           echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> $GITHUB_ENV
 
-      - name: Capture and update project mix version
+      - name: Update project mix version
         run: |
-          MIX_VERSION=`grep "version:" mix.exs | awk -F'"' '{print $2}'`
-          CALORI_VERSION=${MIX_VERSION}-${GITHUB_SHORT_SHA}
-          echo "CALORI_VERSION=${CALORI_VERSION}" >> $GITHUB_ENV
-          sed -i "s/.*version:.*/  version: \"${CALORI_VERSION}\",/" mix.exs
+          sed -i "s/.*version:.*/  version: \"${{ inputs.tag }}\",/" mix.exs
 
       - name: Create Release file version
         run: |
-          echo "{\"version\":\"${CALORI_VERSION}\",\"hash\":\"${GITHUB_SHA}\"}" | jq > current.json
+          echo "{\"version\":\"${{ inputs.tag }}\",\"hash\":\"${GITHUB_SHA}\"}" | jq > current.json
 
       - name: Install Elixir dependencies
         run: mix do deps.get, compile
@@ -46,15 +45,15 @@ jobs:
 
       - name: Generate a Release
         run: mix release
-    
+
       - name: Copy a release file to the s3 distribution folder
         uses: prewk/s3-cp-action@v2
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: "sa-east-1"
-          source: '_build/prod/*.tar.gz'
-          dest: 's3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/dist/calori/calori-${CALORI_VERSION}.tar.gz'
+          source: "_build/prod/*.tar.gz"
+          dest: "s3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/dist/calori/calori-${{ inputs.tag }}.tar.gz"
 
       - name: Copy a version file to the s3 version folder
         uses: prewk/s3-cp-action@v2
@@ -62,5 +61,5 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: "sa-east-1"
-          source: 'current.json'
-          dest: 's3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/versions/calori/${{ secrets.CLOUD_ENV_NAME }}/current.json'
+          source: "current.json"
+          dest: "s3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/versions/calori/${{ secrets.CLOUD_ENV_NAME }}/current.json"
