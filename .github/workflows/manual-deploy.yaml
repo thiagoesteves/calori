@@ -42,9 +42,18 @@ jobs:
           tag: ${{ env.PROJ_TAG }}
           message: "Created ${{ inputs.deployment }} tag ${{ env.PROJ_TAG }}"
 
-  deploy:
+  deploy-full-deployment:
+    if: inputs.deployment == 'full-deployment'
     needs: create-tag
     uses: ./.github/workflows/full-deployment.yaml
+    with:
+      tag: ${{ needs.create-tag.outputs.tag }}
+    secrets: inherit
+
+  deploy-hot-upgrade:
+    if: inputs.deployment == 'hot-upgrade'
+    needs: create-tag
+    uses: ./.github/workflows/hot-upgrade.yaml
     with:
       tag: ${{ needs.create-tag.outputs.tag }}
     secrets: inherit

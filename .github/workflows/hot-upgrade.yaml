@@ -1,4 +1,4 @@
-name: Deploy a full deployment package/version to AWS
+name: Deploy a hot-upgrade package/version to AWS
 
 on:
   workflow_call:
@@ -18,11 +18,36 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
           version-file: .tool-versions
           version-type: strict
+
+      - name: Retrieve the deployed current.json
+        uses: prewk/s3-cp-action@v2
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: "sa-east-1"
+          source: "s3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/versions/calori/${{ secrets.CLOUD_ENV_NAME }}/current.json"
+          dest: "./s3-current.json"
+
+      - name: Compile the current deployed version
+        run: |
+          VERSION=$(cat s3-current.json | jq '.version' |  tr -d '"')
+          HASH=$(cat s3-current.json | jq '.hash' |  tr -d '"')
+          echo ${VERSION} ${HASH}
+          git checkout ${HASH}
+          sed -i "s/.*version:.*/  version: \"${VERSION}\",/" mix.exs
+          mix deps.get
+          mix compile
+          mix assets.deploy
+          mix release
+          echo "Return to the current branch head: ${GITHUB_SHA}"
+          git checkout ${GITHUB_SHA}
 
       - name: Update project mix version
         run: |
@@ -47,7 +72,7 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: "sa-east-1"
-          source: "_build/prod/*.tar.gz"
+          source: "_build/prod/calori-${{ inputs.tag }}.tar.gz"
           dest: "s3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/dist/calori/calori-${{ inputs.tag }}.tar.gz"
 
       - name: Copy a version file to the s3 version folder
