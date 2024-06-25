@@ -79,9 +79,16 @@ write_files:
             "files": {
               "collect_list": [
                 {
-                    "file_path": "/var/log/deployex.log",
+                    "file_path": "/var/log/deployex/deployex-stdout.log",
                     "log_group_name": "${log_group_name}",
-                    "log_stream_name": "{instance_id}-deployex-log",
+                    "log_stream_name": "{instance_id}-deployex-stdout-log",
+                    "timezone": "UTC",
+                    "timestamp_format": "%H: %M: %S%Y%b%-d"
+                },
+                {
+                    "file_path": "/var/log/deployex/deployex-stderr.log",
+                    "log_group_name": "${log_group_name}",
+                    "log_stream_name": "{instance_id}-deployex-stderr-log",
                     "timezone": "UTC",
                     "timestamp_format": "%H: %M: %S%Y%b%-d"
                 },
@@ -201,7 +208,8 @@ write_files:
       Environment=DEPLOYEX_PHX_HOST=${deployex_hostname}
       Environment=DEPLOYEX_MONITORED_REPLICAS=${replicas}
       ExecStart=/opt/deployex/bin/deployex start
-      StandardOutput=append:/var/log/deployex.log
+      StandardOutput=append:/var/log/deployex/deployex-stdout.log
+      StandardError=append:/var/log/deployex/deployex-stderr.log
       KillMode=process
       Restart=on-failure
       RestartSec=3
@@ -225,7 +233,10 @@ runcmd:
   - mkdir /etc/deployex
   - mkdir /var/lib/deployex
   - chown deployex:deployex /var/lib/deployex
-  - touch /var/log/deployex.log
+  - mkdir /var/log/deployex/
+  - chown deployex:deployex /var/log/deployex/
+  - touch /var/log/deployex/deployex-stdout.log
+  - touch /var/log/deployex/deployex-stderr.log
   - mkdir /var/log/calori/
   - chown deployex:deployex /var/log/calori/
   - wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
