@@ -11,44 +11,6 @@ packages:
  - jq
 
 write_files:
-  - path: /home/ubuntu/install-upgrade.sh
-    owner: root:root
-    permissions: "0755"
-    content: |
-      #!/bin/bash
-      #
-      #  Script to install or update deployex
-      #
-      # Check if the version was passed as an argument
-      if [ -z "$1" ]; then
-          # If not passed, use the default value
-          VERSION="0.3.0-rc1"
-      else
-          # If passed, use the passed value
-          VERSION="$1"
-      fi
-      # Stop service (if it is running)
-      systemctl stop deployex.service
-      #
-      echo ""
-      echo "#           Updating Deployex              #"
-      cd /tmp
-      echo "# Download the latest deployex version     #"
-      rm -f deployex-ubuntu-20.04.tar.gz
-      wget https://github.com/thiagoesteves/deployex/releases/download/$${VERSION}/deployex-ubuntu-20.04.tar.gz
-      if [ $? != 0 ]; then
-              echo "Error while trying to download the version: $${VERSION}"
-              exit
-      fi
-      echo "# Clean and create a new directory         #"
-      OPT_DIR=/opt/deployex
-      rm -rf $OPT_DIR
-      mkdir -p $OPT_DIR
-      cd $OPT_DIR
-      tar xf /tmp/deployex-ubuntu-20.04.tar.gz
-      echo "# Start systemd                            #"
-      systemctl daemon-reload
-      systemctl enable --now deployex.service
   - path: /home/ubuntu/install-otp-certificates.sh
     owner: root:root
     permissions: "0755"
@@ -187,58 +149,16 @@ write_files:
           }
           # Add here the letsencrypt paths
       }
-  - path: /etc/systemd/system/deployex.service
-    owner: root:root
-    permissions: "0644"
-    content: |
-      [Unit]
-      Description=Deployex daemon
-      After=network.target
-      
-      [Service]
-      Environment=SHELL=/usr/bin/bash
-      Environment=AWS_REGION=${aws_region}
-      Environment=CALORI_PHX_HOST=${hostname}
-      Environment=CALORI_PHX_SERVER=true
-      Environment=CALORI_CLOUD_ENVIRONMENT=${account_name}
-      Environment=CALORI_OTP_TLS_CERT_PATH=/usr/local/share/ca-certificates
-      Environment=DEPLOYEX_CLOUD_ENVIRONMENT=${account_name}
-      Environment=DEPLOYEX_OTP_TLS_CERT_PATH=/usr/local/share/ca-certificates
-      Environment=DEPLOYEX_MONITORED_APP_NAME=calori
-      Environment=DEPLOYEX_PHX_HOST=${deployex_hostname}
-      Environment=DEPLOYEX_MONITORED_REPLICAS=${replicas}
-      ExecStart=/opt/deployex/bin/deployex start
-      StandardOutput=append:/var/log/deployex/deployex-stdout.log
-      StandardError=append:/var/log/deployex/deployex-stderr.log
-      KillMode=process
-      Restart=on-failure
-      RestartSec=3
-      LimitNPROC=infinity
-      LimitCORE=infinity
-      LimitNOFILE=infinity
-      RuntimeDirectory=deployex
-      User=deployex
-      Group=deployex
-      
-      [Install]
-      WantedBy=multi-user.target
 runcmd:
   - cd /tmp
   - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" "-o"  "awscliv2.zip"
   - unzip "awscliv2.zip"
   - ./aws/install
   - ./aws/install --update
-  - mkdir /opt/deployex
-  - useradd  -c "Deployer User" -d  /var/deployex -s  /usr/sbin/nologin --user-group --no-create-home deployex
-  - mkdir /etc/deployex
-  - mkdir /var/lib/deployex
-  - chown deployex:deployex /var/lib/deployex
-  - mkdir /var/log/deployex/
-  - chown deployex:deployex /var/log/deployex/
-  - touch /var/log/deployex/deployex-stdout.log
-  - touch /var/log/deployex/deployex-stderr.log
-  - mkdir /var/log/calori/
-  - chown deployex:deployex /var/log/calori/
+  - /home/ubuntu/install-otp-certificates.sh
+  - wget https://github.com/thiagoesteves/deployex/releases/download/0.3.0-rc9/deployex.sh -P /home/ubuntu
+  - chmod a+x /home/ubuntu/deployex.sh
+  - /home/ubuntu/deployex.sh --install -a calori -r ${replicas} -h ${hostname} -c ${account_name} -d ${deployex_hostname} -u ${aws_region} -v ${deployex_version} -s ubuntu-20.04
   - wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
   - dpkg -i -E ./amazon-cloudwatch-agent.deb
   - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ubuntu/config.json -s

@@ -92,6 +92,7 @@ data "cloudinit_config" "server_config" {
     content = templatefile("${path.module}/cloud-config.tpl", {
       hostname = "${var.server_dns}"
       deployex_hostname = "${var.deployex_dns}"
+      deployex_version = "${var.deployex_version}"
       log_group_name = aws_cloudwatch_log_group.ec2_instance_logs.name
       account_name = "${var.account_name}"
       aws_region = "${var.aws_region}"

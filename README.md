@@ -73,7 +73,9 @@ Add the following certificates:
 
 ### 5. EC2 Provisioning (Manual Steps)
 
-The deployex is not installed by default, the user needs to access the EC2 and install it via script. (This step can also be used to update the deployex)
+When running Terraform for the first time, AWS secrets are not yet created. Consequently, attempts to execute deployex or certificates installation will fail. Once these AWS secrets, including certificates and other sensitive information, are updated, subsequent iterations of Terraform's EC2 destroy/create process will no longer require manual intervention.
+
+For initial installations or updates to deployex, follow these steps:
 
 *__PS__*: make sure you have the pair calori-web-ec2.pem saved in `~/.ssh/`
 
@@ -108,37 +110,51 @@ ca.crt  calori.crt calori.key deployex.crt  deployex.key
 Run the script to install (or update) deployex:
 
 ```bash
-root@ip-10-0-1-56:/home/ubuntu$ ./install-upgrade.sh 
+root@ip-10-0-1-116:/home/ubuntu# ./deployex.sh --install -a calori -r 3 -h calori.com.br -c prod -d deployex.calori.com.br -u sa-east-1 -v 0.3.0-rc9 -s ubuntu-20.04
+#           Removing Deployex              #
+Removed /etc/systemd/system/multi-user.target.wants/deployex.service.
+rm: cannot remove '/etc/systemd/system/deployex.service': No such file or directory
+rm: cannot remove '/usr/lib/systemd/system/deployex.service': No such file or directory
+rm: cannot remove '/usr/lib/systemd/system/deployex.service': No such file or directory
+#     Deployex removed with success        #
+#          Installing Deployex             #
+useradd: user 'deployex' already exists
+mkdir: cannot create directory ‘/var/log/calori/’: File exists
+#    Deployex installed with success       #
 
 #           Updating Deployex              #
-# Download the latest deployex version     #
---2024-05-14 00:54:42--  https://github.com/thiagoesteves/deployex/releases/download/0.1.0/deployex-ubuntu-20.04.tar.gz
+# Download the deployex version: 0.3.0-rc8 #
+--2024-06-27 18:04:18--  https://github.com/thiagoesteves/deployex/releases/download/0.3.0-rc8/deployex-ubuntu-20.04.tar.gz
 Resolving github.com (github.com)... 20.201.28.151
 Connecting to github.com (github.com)|20.201.28.151|:443... connected.
 HTTP request sent, awaiting response... 302 Found
-...
+Location: ...
 Connecting to objects.githubusercontent.com (objects.githubusercontent.com)|185.199.109.133|:443... connected.
 HTTP request sent, awaiting response... 200 OK
-Length: 27564543 (26M) [application/octet-stream]
+Length: 30752682 (29M) [application/octet-stream]
 Saving to: ‘deployex-ubuntu-20.04.tar.gz’
 
-deployex-ubuntu-20.04.tar.gz            100%[=============================================================================>]  26.29M  14.1MB/s    in 1.9s
+deployex-ubuntu-20.04.tar.gz            100%[=============================================================================>]  29.33M   139MB/s    in 0.2s
 
-2024-05-14 00:54:44 (14.1 MB/s) - ‘deployex-ubuntu-20.04.tar.gz’ saved [27564543/27564543]
+2024-06-27 18:04:19 (139 MB/s) - ‘deployex-ubuntu-20.04.tar.gz’ saved [30752682/30752682]
 
+# Stop current service                     #
+Failed to stop deployex.service: Unit deployex.service not loaded.
 # Clean and create a new directory         #
 # Start systemd                            #
+# Start new service                        #
 Created symlink /etc/systemd/system/multi-user.target.wants/deployex.service → /etc/systemd/system/deployex.service.
+root@ip-10-0-1-116:/home/ubuntu#
 ```
 
 If the deployex needs to be updated, a new version can be passed as argument, e. g. :
 ```bash
-root@ip-10-0-1-56:/home/ubuntu$ ./install-upgrade.sh 1.0.0
+root@ip-10-0-1-116:/home/ubuntu# ./deployex.sh --update -v 0.3.0-rc9 -s ubuntu-20.04
 ```
 
 If deployex is running and still there is no version of the monitored app available, you should see this message in the logs:
 ```bash
-root@ip-10-0-1-56:/home/ubuntu# tail -f /var/log/deployex.log
+root@ip-10-0-1-56:/home/ubuntu# tail -f /var/log/deployex/deployex-stdout.log
 00:54:47.786 [info] module=Deployex.Monitor function=start_service/2 pid=<0.1028.0>  No version set, not able to start_service
 ```
 
@@ -249,12 +265,13 @@ To connect to the iex shell, you may need to export the cookie if AWS is configu
 
 ```bash
 ubuntu@ip-10-0-1-56:~$ sudo su
+root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_NODE_SUFFIX=
 root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_COOKIE=COOKIE12345678912345789
 root@ip-10-0-1-56:/home/ubuntu$ /opt/deployex/bin/deployex remote
-Erlang/OTP 26 [erts-14.2.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
+Erlang/OTP 26 [erts-14.1.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
 
 Interactive Elixir (1.16.0) - press Ctrl+C to exit (type h() ENTER for help)
-iex(deployex@ip-10-0-1-56)1>
+iex(deployex@ip-10-0-1-240)1> 
 ```
 
 ##### 2. IEX shell Access to Calori App
@@ -263,20 +280,21 @@ To connect to the iex shell, you may need to export the cookie if AWS is configu
 
 ```bash
 ubuntu@ip-10-0-1-56:~$ sudo su
+root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_NODE_SUFFIX=-1
 root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_COOKIE=COOKIE12345678912345789
-root@ip-10-0-1-56:/home/ubuntu$ /var/lib/deployex/service/calori/current/bin/calori remote
+root@ip-10-0-1-56:/home/ubuntu$ /var/lib/deployex/service/calori/1/current/bin/calori remote
 Erlang/OTP 26 [erts-14.1.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
 
 Interactive Elixir (1.16.0) - press Ctrl+C to exit (type h() ENTER for help)
-iex(calori@ip-10-0-1-174)1>
+iex(calori-1@ip-10-0-1-240)1>
 ```
 
 ##### 3. Logs
 
-The logs for deployex can be found at `/var/log/deployex.log`.
+The logs for deployex can be found at `/var/log/deployex/deployex-stdout.log`.
 
 ```bash
-root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/deployex.log 
+root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/deployex/deployex-stdout.log
 13:44:25.292 [notice] pid=<0.900.0>  SIGTERM received - shutting down
 
 13:46:20.553 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>  Ensure requested for version: 0.1.0
@@ -289,10 +307,10 @@ root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/deployex.log
 13:48:11.687 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>   - Running, monitoring pid = #PID<0.1018.0>, OS process id = 1569.
 ```
 
-The logs for calori can be found at `/var/log/calori-stdout.log` or `/var/log/calori-stderr.log`.
+The logs for calori can be found at `/var/log/calori/calori-{instance}-stdout.log` or `/var/log/calori/calori-{instance}-stderr.log`.
 
 ```bash
-root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/calori-stdout.log 
+root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/calori/calori-1-stdout.log
 14:09:36.156 [info] CONNECTED TO Phoenix.LiveView.Socket in 25µs
   Transport: :websocket
   Serializer: Phoenix.Socket.V2.JSONSerializer
@@ -307,41 +325,19 @@ root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/calori-stdout.log
 
 ##### 4. Updating CALORI_PHX_HOST
 
-In case you need to update the *__CALORI_PHX_HOST__*, there are 2 files that need to be updated:  `/etc/systemd/system/deployex.service` and `/etc/nginx/sites-available/default` (you need to be `root` user to update them).
+In case you need to update the *__CALORI_PHX_HOST__*, you just need to reinstall deployex passing the new host.
 
 ```bash
 ubuntu@ip-10-0-1-56:~$ sudo su
-root@ip-10-0-1-56:/home/ubuntu$ vi /etc/systemd/system/deployex.service
-...
-Environment=CALORI_PHX_HOST={CHANGE-ME}
-...
-
-root@ip-10-0-1-56:/home/ubuntu$ vi /etc/nginx/sites-available/default
-...
-server {
-    server_name  {CHANGE-ME};
-...
-server {
-    if ($host = calori.com.br) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
-
-    server_name {CHANGE-ME};
-```
-
-you also need to reload the deployex service and restart it (nginx and deployex), execute the commands:
-
-```bash
-systemctl stop deployex.service
-systemctl daemon-reload
-systemctl enable --now deployex.service
+root@ip-10-0-1-56:/home/ubuntu# ./deployex.sh --install -a calori -r 3 -h new_host.com -c prod -d deployex.new_host.com -u sa-east-1 -v 0.3.0-rc9 -s ubuntu-20.04
 ```
 
 You will have to re-create the certificates with certbot (if you are using Let's encrypt):
 ```bash
 certbot --nginx
 ```
+
+It is high likely this command will modify nginx config file to a invalid format. In this case, you can just follow the 7.
 
 ##### 5. Restart Calori app
 
@@ -360,8 +356,8 @@ In order to force Deployex to download and redeploy calori with the same version
 ```bash
 sudo su
 systemctl stop deployex.service
-rm /var/lib/deployex/current.json
-rm -rf /var/lib/deployex/service/calori/current/
+rm -rf /var/lib/deployex/version/
+rm -rf /var/lib/deployex/service/calori/
 systemctl start deployex.service
 ```
 
@@ -372,11 +368,13 @@ In order to check the Calori sys.config data, you can access the remote iex from
 *__ATTENTION: In order to have the OTP distribution available make sure the cookie and the certificates are correctly set for both apps__*
 
 ```bash
-deployex@ip-10-0-1-56:/var/lib/deployex/service/calori$ /var/lib/deployex/service/calori/current/bin/calori remote
-Erlang/OTP 26 [erts-14.2.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
+root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_NODE_SUFFIX=-1
+root@ip-10-0-1-56:/home/ubuntu$ export RELEASE_COOKIE=COOKIE12345678912345789
+root@ip-10-0-1-56:/home/ubuntu$ /var/lib/deployex/service/calori/1/current/bin/calori remote
+Erlang/OTP 26 [erts-14.1.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit:ns]
 
 Interactive Elixir (1.16.0) - press Ctrl+C to exit (type h() ENTER for help)
-iex(calori@ip-10-0-1-56)1>
+iex(calori-1@ip-10-0-1-240)1>
 ```
 and then connect both to the distribution
 

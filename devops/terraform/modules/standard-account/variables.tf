@@ -27,3 +27,8 @@ variable "aws_region" {
   description = "The AWS region to use"
   default     = "sa-east-1"
 }
+
+variable "deployex_version" {
+  description = "The default deployex version to install"
+  nullable = false
+}

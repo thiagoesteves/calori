@@ -6,9 +6,10 @@ provider "aws" {
 }
 
 module "standard_account" {
-  source       = "../../modules/standard-account"
-  account_name = "stage"
-  server_dns   = "example.com"
-  deployex_dns = "deployex.example.com"
-  replicas     = "3"
+  source           = "../../modules/standard-account"
+  account_name     = "stage"
+  server_dns       = "example.com"
+  replicas         = "3"
+  deployex_dns     = "deployex.example.com"
+  deployex_version = "0.3.0-rc9"
 }
