@@ -7,7 +7,11 @@ To start your Phoenix server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-Ready to run in production? Have a look in the next section
+Ready to run in production? Have a look in the next sections
+
+# Deployment management
+
+The deploy management is handled by [Deployex](https://github.com/thiagoesteves/deployex) and you can check its [deployment](https://deployex.calori.com.br).
 
 # AWS Deployment (with terraform)
 
