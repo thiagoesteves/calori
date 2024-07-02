@@ -11,7 +11,7 @@ Ready to run in production? Have a look in the next sections
 
 # Deployment management
 
-The deploy management is handled by [Deployex](https://github.com/thiagoesteves/deployex) and you can check its [deployment](https://deployex.calori.com.br).
+Deployments for Calori web-server are handled by [Deployex](https://github.com/thiagoesteves/deployex) and you can check its [current deployment](https://deployex.calori.com.br).
 
 # AWS Deployment (with terraform)
 
@@ -299,32 +299,24 @@ The logs for deployex can be found at `/var/log/deployex/deployex-stdout.log`.
 
 ```bash
 root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/deployex/deployex-stdout.log
-13:44:25.292 [notice] pid=<0.900.0>  SIGTERM received - shutting down
-
-13:46:20.553 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>  Ensure requested for version: 0.1.0
-13:46:20.554 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>   - Starting /var/lib/deployex/service/calori/current/bin/calori...
-13:46:20.555 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>   - Running, monitoring pid = #PID<0.1018.0>, OS process id = 1418.
-13:46:57.675 [notice] pid=<0.900.0>  SIGTERM received - shutting down
-
-13:48:11.686 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>  Ensure requested for version: 0.1.0
-13:48:11.686 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>   - Starting /var/lib/deployex/service/calori/current/bin/calori...
-13:48:11.687 [info] module=Deployex.Monitor function=ensure_running/2 pid=<0.1017.0>   - Running, monitoring pid = #PID<0.1018.0>, OS process id = 1569.
+19:59:20.035 [info] module=Deployex.AwsSecretsManagerProvider function=load/2 pid=<0.9.0>    - Retrieve secrets
+19:59:20.487 [info] module=Deployex.Deployment function=init/1 pid=<0.1739.0>  Initialising deployment server
+19:59:20.493 [info] module=Bandit function=start_link/1 pid=<0.1755.0>  Running DeployexWeb.Endpoint with Bandit 1.5.3 at :::5001 (http)
+19:59:20.505 [info] module=Phoenix.Endpoint.Supervisor function=log_access_url/2 pid=<0.1735.0>  Access DeployexWeb.Endpoint at https://deployex.calori.com.br
+19:59:20.506 [info] module=Deployex.Monitor function=init/1 pid=<0.2065.0>  Initialising monitor server for instance: 1
+19:59:20.508 [info] instance=1 module=Deployex.Monitor function=run_service/2 pid=<0.2065.0>  Ensure running requested for instance: 1 version: 0.1.0-627e062
+19:59:20.509 [info] instance=1 module=Deployex.Monitor function=run_service/2 pid=<0.2065.0>   # Starting /var/lib/deployex/service/calori/1/current/bin/calori...
+19:59:20.509 [info] instance=1 module=Deployex.Monitor function=run_service/2 pid=<0.2065.0>   # Running instance: 1, monitoring pid = #PID<0.2066.0>, OS process id = 828.
+19:59:20.510 [info] module=Deployex.Monitor function=init/1 pid=<0.2067.0>  Initialising monitor server for instance: 2
 ```
 
 The logs for calori can be found at `/var/log/calori/calori-{instance}-stdout.log` or `/var/log/calori/calori-{instance}-stderr.log`.
 
 ```bash
 root@ip-10-0-1-56:/home/ubuntu$ tail -f /var/log/calori/calori-1-stdout.log
-14:09:36.156 [info] CONNECTED TO Phoenix.LiveView.Socket in 25µs
-  Transport: :websocket
-  Serializer: Phoenix.Socket.V2.JSONSerializer
-  Parameters: %{"_csrf_token" => "V18FIDZHICgFM2BmEAk7MS0CLh0qPFQrflVBL-kp1R59hGURu2FuaqfJ", "_live_referer" => "undefined", "_mounts" => "0", "_track_static" => %{"0" => "http://ec2-18-223-210-216.us-east-2.compute.amazonaws.com/assets/app-f519839f3e224b77ecdaa1fd3818e91e.css?vsn=d", "1" => "http://ec2-18-223-210-216.us-east-2.compute.amazonaws.com/assets/app-54c572e977c8f20ea325db08d4d9f5f1.js?vsn=d"}, "timezone" => "America/Sao_Paulo", "vsn" => "2.0.0"}
-14:09:36.495 [info] GET /app/user/calendar
-14:09:36.511 [info] Sent 200 in 15ms
-14:09:36.871 [info] CONNECTED TO Phoenix.LiveView.Socket in 25µs
-  Transport: :websocket
-  Serializer: Phoenix.Socket.V2.JSONSerializer
-  Parameters: %{"_csrf_token" => "YgoZUCNZBCpAJxkAHiYFC21BHistBH03S9J2Y3OrtFL_fhkh5qvCfIOV", "_live_referer" => "undefined", "_mounts" => "0", "_track_static" => %{"0" => "http://ec2-18-223-210-216.us-east-2.compute.amazonaws.com/assets/app-f519839f3e224b77ecdaa1fd3818e91e.css?vsn=d", "1" => "http://ec2-18-223-210-216.us-east-2.compute.amazonaws.com/assets/app-54c572e977c8f20ea325db08d4d9f5f1.js?vsn=d"}, "timezone" => "America/Sao_Paulo", "vsn" => "2.0.0"}
+13:53:25.623 module=Calori.AwsSecretsManagerProvider function=load/2 pid=<0.9.0> [info]   - Retrieve secrets
+13:53:25.929 module=Bandit function=start_link/1 pid=<0.1722.0> [info] Running CaloriWeb.Endpoint with Bandit 1.5.0 at :::4000 (http)
+13:53:25.934 module=Phoenix.Endpoint.Supervisor function=log_access_url/2 pid=<0.1703.0> [info] Access CaloriWeb.Endpoint at https://calori.com.br
 ```
 
 ##### 4. Updating CALORI_PHX_HOST
