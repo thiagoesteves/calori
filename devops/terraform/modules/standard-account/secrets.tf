@@ -10,7 +10,7 @@ locals {
 }
 
 resource "aws_secretsmanager_secret" "deployex_secrets" {
-  name                    = "deployex-${var.account_name}-secrets"
+  name                    = "deployex-calori-${var.account_name}-secrets"
   description             = "All Deployex Secrets"
   recovery_window_in_days = 0
   tags = local.secret_tag
