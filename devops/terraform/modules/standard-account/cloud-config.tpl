@@ -28,6 +28,25 @@ write_files:
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/deployex.crt
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/calori.crt
       echo "[OK]"
+  - path: /home/ubuntu/deployex-config.json
+    owner: root:root
+    permissions: "0644"
+    content: |
+      {
+        "app_name": "calori",
+        "replicas": ${replicas},
+        "account_name": "${account_name}",
+        "deployex_hostname": "${deployex_hostname}",
+        "aws_region": "${aws_region}",
+        "version": "${deployex_version}",
+        "os_target": "ubuntu-20.04",
+        "env": {
+            "CALORI_PHX_HOST": "${hostname}",
+            "CALORI_PHX_SERVER": true,
+            "CALORI_CLOUD_ENVIRONMENT": "${account_name}",
+            "CALORI_OTP_TLS_CERT_PATH": "/usr/local/share/ca-certificates"
+        }
+      }
   - path: /home/ubuntu/config.json
     owner: root:root
     permissions: "0644"
@@ -156,9 +175,9 @@ runcmd:
   - ./aws/install
   - ./aws/install --update
   - /home/ubuntu/install-otp-certificates.sh
-  - wget https://github.com/thiagoesteves/deployex/releases/download/0.3.0-rc9/deployex.sh -P /home/ubuntu
+  - wget https://github.com/thiagoesteves/deployex/releases/download/${deployex_version}/deployex.sh -P /home/ubuntu
   - chmod a+x /home/ubuntu/deployex.sh
-  - /home/ubuntu/deployex.sh --install -a calori -r ${replicas} -h ${hostname} -c ${account_name} -d ${deployex_hostname} -u ${aws_region} -v ${deployex_version} -s ubuntu-20.04
+  - /home/ubuntu/deployex.sh --install /home/ubuntu/deployex-config.json
   - wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
   - dpkg -i -E ./amazon-cloudwatch-agent.deb
   - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ubuntu/config.json -s
