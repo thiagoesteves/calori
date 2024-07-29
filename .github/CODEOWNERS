@@ -1,0 +1,4 @@
+/.github/CODEOWNERS @thiagoesteves
+/mix.exs @thiagoesteves
+/devops/ @thiagoesteves
+

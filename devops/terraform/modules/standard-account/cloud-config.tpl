@@ -40,6 +40,8 @@ write_files:
         "aws_region": "${aws_region}",
         "version": "${deployex_version}",
         "os_target": "ubuntu-20.04",
+        "deploy_timeout_rollback_ms": 600000,
+        "deploy_schedule_interval_ms": 5000,
         "env": {
             "CALORI_PHX_HOST": "${hostname}",
             "CALORI_PHX_SERVER": true,
