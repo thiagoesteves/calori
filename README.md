@@ -114,36 +114,9 @@ ca.crt  calori.crt calori.key deployex.crt  deployex.key
 Run the script to install (or update) deployex:
 
 ```bash
-root@ip-10-0-1-116:/home/ubuntu# ./deployex.sh --install -a calori -r 3 -h calori.com.br -c prod -d deployex.calori.com.br -u sa-east-1 -v 0.3.0-rc9 -s ubuntu-20.04
+root@ip-10-0-1-116:/home/ubuntu# ./deployex.sh --install deployex-config.json
 #           Removing Deployex              #
-Removed /etc/systemd/system/multi-user.target.wants/deployex.service.
-rm: cannot remove '/etc/systemd/system/deployex.service': No such file or directory
-rm: cannot remove '/usr/lib/systemd/system/deployex.service': No such file or directory
-rm: cannot remove '/usr/lib/systemd/system/deployex.service': No such file or directory
-#     Deployex removed with success        #
-#          Installing Deployex             #
-useradd: user 'deployex' already exists
-mkdir: cannot create directory ‘/var/log/calori/’: File exists
-#    Deployex installed with success       #
-
-#           Updating Deployex              #
-# Download the deployex version: 0.3.0-rc8 #
---2024-06-27 18:04:18--  https://github.com/thiagoesteves/deployex/releases/download/0.3.0-rc8/deployex-ubuntu-20.04.tar.gz
-Resolving github.com (github.com)... 20.201.28.151
-Connecting to github.com (github.com)|20.201.28.151|:443... connected.
-HTTP request sent, awaiting response... 302 Found
-Location: ...
-Connecting to objects.githubusercontent.com (objects.githubusercontent.com)|185.199.109.133|:443... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 30752682 (29M) [application/octet-stream]
-Saving to: ‘deployex-ubuntu-20.04.tar.gz’
-
-deployex-ubuntu-20.04.tar.gz            100%[=============================================================================>]  29.33M   139MB/s    in 0.2s
-
-2024-06-27 18:04:19 (139 MB/s) - ‘deployex-ubuntu-20.04.tar.gz’ saved [30752682/30752682]
-
-# Stop current service                     #
-Failed to stop deployex.service: Unit deployex.service not loaded.
+...
 # Clean and create a new directory         #
 # Start systemd                            #
 # Start new service                        #
@@ -151,9 +124,20 @@ Created symlink /etc/systemd/system/multi-user.target.wants/deployex.service →
 root@ip-10-0-1-116:/home/ubuntu#
 ```
 
-If the deployex needs to be updated, a new version can be passed as argument, e. g. :
+If the deployex needs to be updated, open the file `deployex-config.json` and update to the new version:
+
 ```bash
-root@ip-10-0-1-116:/home/ubuntu# ./deployex.sh --update -v 0.3.0-rc9 -s ubuntu-20.04
+vi deployex-config.json
+{
+ ...
+  "version": "0.3.0-rc15",
+  "os_target": "ubuntu-20.04",
+  ...
+```
+
+Once the file is updated, run the update command:
+```bash
+root@ip-10-0-1-116:/home/ubuntu# ./deployex.sh --update deployex-config.json
 ```
 
 If deployex is running and still there is no version of the monitored app available, you should see this message in the logs:
@@ -325,7 +309,7 @@ In case you need to update the *__CALORI_PHX_HOST__*, you just need to reinstall
 
 ```bash
 ubuntu@ip-10-0-1-56:~$ sudo su
-root@ip-10-0-1-56:/home/ubuntu# ./deployex.sh --install -a calori -r 3 -h new_host.com -c prod -d deployex.new_host.com -u sa-east-1 -v 0.3.0-rc9 -s ubuntu-20.04
+root@ip-10-0-1-56:/home/ubuntu# ./deployex.sh --install -a calori -r 3 -h new_host.com -c prod -d deployex.new_host.com -u sa-east-1 -v 0.3.0-rc14 -s ubuntu-20.04
 ```
 
 You will have to re-create the certificates with certbot (if you are using Let's encrypt):
