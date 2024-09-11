@@ -1,4 +1,4 @@
-name: Deploy a full deployment package/version to AWS
+name: Deploy a full deployment package/version to AWS/GCP
 
 on:
   workflow_call:
@@ -12,10 +12,8 @@ env:
 
 jobs:
   build:
-    name: Building a release and publishing it at AWS
+    name: Building a release and version file
     runs-on: ubuntu-20.04
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Setup BEAM
@@ -41,13 +39,44 @@ jobs:
       - name: Generate a Release
         run: mix release
 
+      - name: 'Upload release file artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-file
+          path: _build/prod/calori-${{ inputs.tag }}.tar.gz
+          retention-days: 5
+
+      - name: 'Upload version file artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-file
+          path: current.json
+          retention-days: 5
+
+  upload_aws:
+    name: Upload files to AWS environment
+    needs: build
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download version file artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: version-file
+
+      - name: Download release file artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-file
+ 
       - name: Copy a release file to the s3 distribution folder
         uses: prewk/s3-cp-action@v2
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: "sa-east-1"
-          source: "_build/prod/*.tar.gz"
+          source: "calori-${{ inputs.tag }}.tar.gz"
           dest: "s3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/dist/calori/calori-${{ inputs.tag }}.tar.gz"
 
       - name: Copy a version file to the s3 version folder
@@ -58,3 +87,41 @@ jobs:
           aws_region: "sa-east-1"
           source: "current.json"
           dest: "s3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/versions/calori/${{ secrets.CLOUD_ENV_NAME }}/current.json"
+
+  upload_gcp:
+    name: Upload files to GCP environment
+    needs: build
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Download version file artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: version-file
+
+      - name: Download release file artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-file
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+
+      - id: 'upload-release-file'
+        uses: 'google-github-actions/upload-cloud-storage@v2'
+        with:
+          path: 'calori-${{ inputs.tag }}.tar.gz'
+          destination: "calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/dist/calori"
+          process_gcloudignore: false
+
+      - id: 'upload-version-file'
+        uses: 'google-github-actions/upload-cloud-storage@v2'
+        with:
+          path: 'current.json'
+          destination: "calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/versions/calori/${{ secrets.CLOUD_ENV_NAME }}"
+          process_gcloudignore: false

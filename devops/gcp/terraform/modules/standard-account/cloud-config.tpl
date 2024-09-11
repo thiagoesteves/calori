@@ -1,6 +1,6 @@
 #cloud-config
 #
-#  Cloud init template for EC2 calori instances.
+#  Cloud init template for Google Compute Instance.
 #
 #  In case you need it, the log of the cloud-init can be found at: 
 #    /var/log/cloud-init-output.log
@@ -22,12 +22,20 @@ write_files:
       echo ""
       echo "# Installing Certificates env: ${account_name} at /usr/local/share/ca-certificates #"
       echo "Retrieving and saving ......"
-      aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-ca | jq -r .SecretString > /usr/local/share/ca-certificates/ca.crt
-      aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-key | jq -r .SecretString > /usr/local/share/ca-certificates/deployex.key
-      aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-key | jq -r .SecretString > /usr/local/share/ca-certificates/calori.key
-      aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/deployex.crt
-      aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/calori.crt
+      gcloud secrets versions access 1 --secret=calori-${account_name}-otp-tls-ca > /usr/local/share/ca-certificates/ca.crt
+      gcloud secrets versions access 1 --secret=calori-${account_name}-otp-tls-key > /usr/local/share/ca-certificates/deployex.key
+      gcloud secrets versions access 1 --secret=calori-${account_name}-otp-tls-key > /usr/local/share/ca-certificates/calori.key
+      gcloud secrets versions access 1 --secret=calori-${account_name}-otp-tls-crt > /usr/local/share/ca-certificates/deployex.crt
+      gcloud secrets versions access 1 --secret=calori-${account_name}-otp-tls-crt > /usr/local/share/ca-certificates/calori.crt
       echo "[OK]"
+  - path: /home/ubuntu/gcp-config.json
+    owner: root:root
+    permissions: "0644"
+    content: |
+      {
+        "type": "service_account" # Populate it after installation
+        ...
+      }
   - path: /home/ubuntu/deployex-config.json
     owner: root:root
     permissions: "0644"
@@ -37,8 +45,12 @@ write_files:
         "replicas": ${replicas},
         "account_name": "${account_name}",
         "deployex_hostname": "${deployex_hostname}",
-        "aws_region": "${aws_region}",
+        "release_adapter": "gcp-storage",
+        "release_bucket": "calori-${account_name}-distribution",
+        "secrets_adapter": "gcp",
+        "secrets_path": "deployex-calori-${account_name}-secrets",
         "version": "${deployex_version}",
+        "google_credentials": "/home/ubuntu/gcp-config.json",
         "os_target": "ubuntu-20.04",
         "deploy_timeout_rollback_ms": 600000,
         "deploy_schedule_interval_ms": 5000,
@@ -47,51 +59,6 @@ write_files:
             "CALORI_PHX_SERVER": true,
             "CALORI_CLOUD_ENVIRONMENT": "${account_name}",
             "CALORI_OTP_TLS_CERT_PATH": "/usr/local/share/ca-certificates"
-        }
-      }
-  - path: /home/ubuntu/config.json
-    owner: root:root
-    permissions: "0644"
-    content: |
-      {
-        "agent": {
-          "run_as_user": "root"
-        },
-        "logs": {
-          "logs_collected": {
-            "files": {
-              "collect_list": [
-                {
-                    "file_path": "/var/log/deployex/deployex-stdout.log",
-                    "log_group_name": "${log_group_name}",
-                    "log_stream_name": "{instance_id}-deployex-stdout-log",
-                    "timezone": "UTC",
-                    "timestamp_format": "%H: %M: %S%Y%b%-d"
-                },
-                {
-                    "file_path": "/var/log/deployex/deployex-stderr.log",
-                    "log_group_name": "${log_group_name}",
-                    "log_stream_name": "{instance_id}-deployex-stderr-log",
-                    "timezone": "UTC",
-                    "timestamp_format": "%H: %M: %S%Y%b%-d"
-                },
-                {
-                    "file_path": "/var/log/calori/calori-*-stdout.log",
-                    "log_group_name": "${log_group_name}",
-                    "log_stream_name": "{instance_id}-calori-stdout-log",
-                    "timezone": "UTC",
-                    "timestamp_format": "%H: %M: %S%Y%b%-d"
-                },
-                {
-                    "file_path": "/var/log/calori/calori-*-stderr.log",
-                    "log_group_name": "${log_group_name}",
-                    "log_stream_name": "{instance_id}-calori-stderr-log",
-                    "timezone": "UTC",
-                    "timestamp_format": "%H: %M: %S%Y%b%-d"
-                }
-              ]
-            }
-          }
         }
       }
   - path: /etc/nginx/sites-available/default
@@ -110,14 +77,14 @@ write_files:
 
       server {
           listen 80;
-          server_name calori.com.br deployex.calori.com.br;
+          server_name ${hostname} ${deployex_hostname};
 
-          if ($host = calori.com.br) {
+          if ($host = ${hostname}) {
               return 301 https://$host$request_uri;
           } # managed by Certbot
 
 
-          if ($host = deployex.calori.com.br) {
+          if ($host = ${deployex_hostname}) {
               return 301 https://$host$request_uri;
           } # managed by Certbot
 
@@ -126,7 +93,7 @@ write_files:
 
       server { 
           #listen 443 ssl; # managed by Certbot
-          server_name  deployex.calori.com.br;
+          server_name  ${deployex_hostname};
           client_max_body_size 30M;
 
           location / {
@@ -150,7 +117,7 @@ write_files:
 
       server {
           #listen 443 ssl; # managed by Certbot
-          server_name  calori.com.br;
+          server_name  ${hostname};
           client_max_body_size 30M;
 
           location / {
@@ -171,18 +138,9 @@ write_files:
           # Add here the letsencrypt paths
       }
 runcmd:
-  - cd /tmp
-  - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" "-o"  "awscliv2.zip"
-  - unzip "awscliv2.zip"
-  - ./aws/install
-  - ./aws/install --update
   - /home/ubuntu/install-otp-certificates.sh
   - wget https://github.com/thiagoesteves/deployex/releases/download/${deployex_version}/deployex.sh -P /home/ubuntu
   - chmod a+x /home/ubuntu/deployex.sh
-  - /home/ubuntu/deployex.sh --install /home/ubuntu/deployex-config.json
-  - wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-  - dpkg -i -E ./amazon-cloudwatch-agent.deb
-  - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ubuntu/config.json -s
   - systemctl enable --no-block nginx 
   - systemctl start --no-block nginx
   - reboot
