@@ -103,7 +103,7 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: "sa-east-1"
-          source: "_build/prod/calori-${{ inputs.tag }}.tar.gz"
+          source: "calori-${{ inputs.tag }}.tar.gz"
           dest: "s3://calori-${{ secrets.CLOUD_ENV_NAME }}-distribution/dist/calori/calori-${{ inputs.tag }}.tar.gz"
 
       - name: Copy a version file to the s3 version folder
