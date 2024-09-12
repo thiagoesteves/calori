@@ -1,4 +1,4 @@
-defmodule Calori.AwsSecretsManagerProvider do
+defmodule Calori.ConfigProvider.Secrets.Manager do
   @moduledoc """
   https://hexdocs.pm/elixir/1.14.0-rc.1/Config.Provider.html
 
@@ -11,8 +11,6 @@ defmodule Calori.AwsSecretsManagerProvider do
   @behaviour Config.Provider
 
   require Logger
-
-  alias ExAws.Operation.JSON
 
   @impl Config.Provider
   def init(_path), do: []
@@ -28,8 +26,18 @@ defmodule Calori.AwsSecretsManagerProvider do
   """
   @impl Config.Provider
   def load(config, opts) do
-    Logger.info("Running AWS config provider")
+    Logger.info("Running Config Provider for Secrets")
     env = Keyword.get(config, :calori) |> Keyword.get(:env)
+
+    secrets_adapter =
+      Keyword.get(config, :calori)
+      |> Keyword.get(Calori.ConfigProvider.Secrets.Manager)
+      |> Keyword.get(:adapter)
+
+    secrets_path =
+      Keyword.get(config, :calori)
+      |> Keyword.get(Calori.ConfigProvider.Secrets.Manager)
+      |> Keyword.get(:path)
 
     if env == "local" do
       Logger.info("  - No secrets retrieved, local environment")
@@ -38,12 +46,9 @@ defmodule Calori.AwsSecretsManagerProvider do
       {:ok, _} = Application.ensure_all_started(:hackney)
       {:ok, _} = Application.ensure_all_started(:ex_aws)
 
-      Logger.info("  - Retrieve secrets")
+      Logger.info("  - Trying to retrieve secrets: #{secrets_adapter} - #{secrets_path}")
 
-      region = System.fetch_env!("AWS_REGION")
-      request_opts = Keyword.merge(opts, region: region)
-
-      secrets = fetch_aws_secret_id("calori-#{env}-secrets", request_opts)
+      secrets = secrets_adapter.secrets(config, secrets_path, opts)
 
       secret_key_base = keyword(:secret_key_base, secrets["CALORI_SECRET_KEY_BASE"])
       erlang_cookie = secrets["CALORI_ERLANG_COOKIE"] |> String.to_atom()
@@ -66,34 +71,5 @@ defmodule Calori.AwsSecretsManagerProvider do
 
   defp keyword(key_name, value) do
     Keyword.new([{key_name, value}])
-  end
-
-  defp fetch_aws_secret_id(secret_id, opts) do
-    secret_id
-    |> build_request()
-    |> ExAws.request(opts)
-    |> parse_secrets()
-  end
-
-  defp build_request(secret_name) do
-    JSON.new(
-      :secretsmanager,
-      %{
-        data: %{"SecretId" => secret_name},
-        headers: [
-          {"x-amz-target", "secretsmanager.GetSecretValue"},
-          {"content-type", "application/x-amz-json-1.1"}
-        ]
-      }
-    )
-  end
-
-  defp parse_secrets({:ok, %{"SecretString" => json_secret}}) do
-    Jason.decode!(json_secret)
-  end
-
-  defp parse_secrets({:error, {exception, reason}}) do
-    Logger.error("#{inspect(exception)}: #{inspect(reason)}")
-    %{}
   end
 end

@@ -45,6 +45,29 @@ if config_env() == :prod do
       port: port
     ]
 
+  secrets_adapter = System.fetch_env!("CALORI_SECRETS_ADAPTER")
+  secrets_path = System.fetch_env!("CALORI_SECRETS_PATH")
+
+  case secrets_adapter do
+    "gcp" ->
+      config :calori, Calori.ConfigProvider.Secrets.Manager,
+        adapter: Calori.ConfigProvider.Secrets.Gcp,
+        path: secrets_path
+
+    "aws" ->
+      config :calori, Calori.ConfigProvider.Secrets.Manager,
+        adapter: Calori.ConfigProvider.Secrets.Aws,
+        path: secrets_path
+
+    adapter ->
+      raise "Secret #{adapter} not supported"
+  end
+
+  if secrets_adapter == "gcp" do
+    config :goth,
+      file_credentials: System.fetch_env!("GOOGLE_APPLICATION_CREDENTIALS") |> File.read!()
+  end
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key

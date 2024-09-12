@@ -58,7 +58,9 @@ write_files:
             "CALORI_PHX_HOST": "${hostname}",
             "CALORI_PHX_SERVER": true,
             "CALORI_CLOUD_ENVIRONMENT": "${account_name}",
-            "CALORI_OTP_TLS_CERT_PATH": "/usr/local/share/ca-certificates"
+            "CALORI_OTP_TLS_CERT_PATH": "/usr/local/share/ca-certificates",
+            "CALORI_SECRETS_ADAPTER": "gcp",
+            "CALORI_SECRETS_PATH": "calori-${account_name}-secrets",
         }
       }
   - path: /etc/nginx/sites-available/default
