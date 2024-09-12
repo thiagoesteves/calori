@@ -75,7 +75,8 @@ defmodule Calori.MixProject do
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
-      {:hackney, "~> 1.20"}
+      {:hackney, "~> 1.20"},
+      {:goth, "~> 1.3.0"}
     ]
   end
 
