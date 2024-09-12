@@ -50,12 +50,12 @@ if config_env() == :prod do
 
   case secrets_adapter do
     "gcp" ->
-      config :deployex, Calori.ConfigProvider.Secrets.Manager,
+      config :calori, Calori.ConfigProvider.Secrets.Manager,
         adapter: Calori.ConfigProvider.Secrets.Gcp,
         path: secrets_path
 
     "aws" ->
-      config :deployex, Calori.ConfigProvider.Secrets.Manager,
+      config :calori, Calori.ConfigProvider.Secrets.Manager,
         adapter: Calori.ConfigProvider.Secrets.Aws,
         path: secrets_path
 
