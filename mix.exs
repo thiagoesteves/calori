@@ -15,7 +15,7 @@ defmodule Calori.MixProject do
         calori: [
           steps: [:assemble, &Jellyfish.Releases.Copy.relfile/1, :tar],
           config_providers: [
-            {Calori.AwsSecretsManagerProvider, nil}
+            {Calori.ConfigProvider.Secrets.Manager, nil}
           ]
         ]
       ],
