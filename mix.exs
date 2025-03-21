@@ -4,7 +4,7 @@ defmodule Calori.MixProject do
   def project do
     [
       app: :calori,
-      version: "0.1.1",
+      version: "0.1.2",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -76,7 +76,8 @@ defmodule Calori.MixProject do
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
       {:hackney, "~> 1.20"},
-      {:goth, "~> 1.3.0"}
+      {:goth, "~> 1.3.0"},
+      {:observer_web, "~> 0.1.0"}
     ]
   end
 
