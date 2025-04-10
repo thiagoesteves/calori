@@ -38,7 +38,7 @@ defmodule CaloriWeb.HomeLive do
                 </p>
                 <a href={~p"/supervisor"} class="mt-2 block">
                   <p class="text-xl font-semibold text-gray-900">
-                    Who is supervising Calori Software?
+                    Who is supervising Calori Software 🔥 (╯°□°)╯?
                   </p>
                   <p class="mt-3 text-base text-gray-500">
                     If you know about the Erlang or Elixir then you are going to love this one.
