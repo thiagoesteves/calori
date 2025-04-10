@@ -10,10 +10,9 @@ defmodule Calori.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: Mix.compilers() ++ [:gen_appup, :appup],
       releases: [
         calori: [
-          steps: [:assemble, &Jellyfish.Releases.Copy.relfile/1, :tar],
+          steps: [:assemble, &Jellyfish.generate/1, :tar],
           config_providers: [
             {Calori.ConfigProvider.Secrets.Manager, nil}
           ]
@@ -68,7 +67,7 @@ defmodule Calori.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.2"},
-      {:jellyfish, "~> 0.1.2"},
+      {:jellyfish, "~> 0.2.0"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
