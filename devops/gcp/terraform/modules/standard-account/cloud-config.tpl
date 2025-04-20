@@ -51,7 +51,7 @@ write_files:
         "secrets_path": "deployex-calori-${account_name}-secrets",
         "version": "${deployex_version}",
         "google_credentials": "/home/ubuntu/gcp-config.json",
-        "os_target": "ubuntu-20.04",
+        "os_target": "ubuntu-24.04",
         "deploy_timeout_rollback_ms": 600000,
         "deploy_schedule_interval_ms": 5000,
         "env": {
