@@ -49,7 +49,7 @@ resource "google_compute_instance" "dev" {
   tags         = ["externalssh","webserver"]
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2004-lts"
+      image = "ubuntu-os-cloud/ubuntu-2404-lts"
     }
   }
   network_interface {

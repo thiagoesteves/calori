@@ -28,33 +28,45 @@ write_files:
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/deployex.crt
       aws secretsmanager get-secret-value --secret-id calori-${account_name}-otp-tls-crt | jq -r .SecretString > /usr/local/share/ca-certificates/calori.crt
       echo "[OK]"
-  - path: /home/ubuntu/deployex-config.json
+  - path: /home/ubuntu/deployex.yaml
     owner: root:root
     permissions: "0644"
     content: |
-      {
-        "app_name": "calori",
-        "replicas": ${replicas},
-        "account_name": "${account_name}",
-        "deployex_hostname": "${deployex_hostname}",
-        "release_adapter": "s3",
-        "release_bucket": "calori-${account_name}-distribution",
-        "secrets_adapter": "aws",
-        "secrets_path": "deployex-calori-${account_name}-secrets",
-        "aws_region": "${aws_region}",
-        "version": "${deployex_version}",
-        "os_target": "ubuntu-20.04",
-        "deploy_timeout_rollback_ms": 600000,
-        "deploy_schedule_interval_ms": 5000,
-        "env": {
-            "CALORI_PHX_HOST": "${hostname}",
-            "CALORI_PHX_SERVER": true,
-            "CALORI_CLOUD_ENVIRONMENT": "${account_name}",
-            "CALORI_OTP_TLS_CERT_PATH": "/usr/local/share/ca-certificates",
-            "CALORI_SECRETS_ADAPTER": "aws",
-            "CALORI_SECRETS_PATH": "calori-${account_name}-secrets"
-        }
-      }
+      account_name: "${account_name}"
+      hostname: "${deployex_hostname}"
+      port: 5001
+      release_adapter: "s3"
+      release_bucket: "calori-${account_name}-distribution"
+      secrets_adapter: "aws"
+      secrets_path: "deployex-calori-${account_name}-secrets"
+      aws_region: "${aws_region}"
+      google_credentials: "/home/ubuntu/gcp-config.json"
+      version: "${deployex_version}"
+      otp_version: 26
+      otp_tls_certificates: "/usr/local/share/ca-certificates"
+      os_target: "ubuntu-24.04"
+      deploy_timeout_rollback_ms: 600000
+      deploy_schedule_interval_ms: 5000
+      metrics_retention_time_ms: 3600000
+      logs_retention_time_ms: 3600000
+      applications:
+        - name: "calori"
+          language: "elixir"
+          initial_port: 4000
+          replicas: 2
+          env:
+            - key: CALORI_PHX_HOST
+              value: "${hostname}"
+            - key: CALORI_PHX_SERVER
+              value: true
+            - key: CALORI_CLOUD_ENVIRONMENT
+              value: "${account_name}"
+            - key: CALORI_OTP_TLS_CERT_PATH
+              value:  "/usr/local/share/ca-certificates"
+            - key: CALORI_SECRETS_ADAPTER
+              value: "aws"
+            - key: CALORI_SECRETS_PATH
+              value: "calori-${account_name}-secrets"
   - path: /home/ubuntu/config.json
     owner: root:root
     permissions: "0644"
@@ -185,9 +197,12 @@ runcmd:
   - /home/ubuntu/install-otp-certificates.sh
   - wget https://github.com/thiagoesteves/deployex/releases/download/${deployex_version}/deployex.sh -P /home/ubuntu
   - chmod a+x /home/ubuntu/deployex.sh
-  - /home/ubuntu/deployex.sh --install /home/ubuntu/deployex-config.json
+  - /home/ubuntu/deployex.sh --install /home/ubuntu/deployex.yaml
   - wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
   - dpkg -i -E ./amazon-cloudwatch-agent.deb
+  - add-apt-repository ppa:rmescandon/yq -y
+  - apt update
+  - apt install yq -y
   - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ubuntu/config.json -s
   - systemctl enable --no-block nginx 
   - systemctl start --no-block nginx

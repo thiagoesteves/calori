@@ -131,7 +131,7 @@ vi deployex-config.json
 {
  ...
   "version": "0.3.0-rc15",
-  "os_target": "ubuntu-20.04",
+  "os_target": "ubuntu-24.04",
   ...
 ```
 
@@ -297,7 +297,7 @@ In case you need to update the *__CALORI_PHX_HOST__*, you just need to reinstall
 
 ```bash
 ubuntu@ip-10-0-1-56:~$ sudo su
-root@ip-10-0-1-56:/home/ubuntu# ./deployex.sh --install -a calori -r 3 -h new_host.com -c prod -d deployex.new_host.com -u sa-east-1 -v 0.3.0-rc14 -s ubuntu-20.04
+root@ip-10-0-1-56:/home/ubuntu# ./deployex.sh --install -a calori -r 3 -h new_host.com -c prod -d deployex.new_host.com -u sa-east-1 -v 0.3.0-rc14 -s ubuntu-24.04
 ```
 
 You will have to re-create the certificates with certbot (if you are using Let's encrypt):
