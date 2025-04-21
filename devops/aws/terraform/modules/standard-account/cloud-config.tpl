@@ -195,13 +195,13 @@ runcmd:
   - ./aws/install
   - ./aws/install --update
   - /home/ubuntu/install-otp-certificates.sh
+  - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+  - chmod a+x /usr/local/bin/yq
   - wget https://github.com/thiagoesteves/deployex/releases/download/${deployex_version}/deployex.sh -P /home/ubuntu
   - chmod a+x /home/ubuntu/deployex.sh
   - /home/ubuntu/deployex.sh --install /home/ubuntu/deployex.yaml
   - wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
   - dpkg -i -E ./amazon-cloudwatch-agent.deb
-  - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-  - chmod a+x /usr/local/bin/yq
   - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ubuntu/config.json -s
   - systemctl enable --no-block nginx 
   - systemctl start --no-block nginx
