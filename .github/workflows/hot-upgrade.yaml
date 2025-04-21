@@ -26,6 +26,9 @@ jobs:
           version-file: .tool-versions
           version-type: strict
 
+      - name: Install libcap-dev [recommended by erlexec]
+        run: sudo apt-get install libcap-dev -y
+
       - name: Retrieve the deployed current.json
         uses: prewk/s3-cp-action@v2
         with:

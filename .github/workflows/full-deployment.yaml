@@ -22,6 +22,9 @@ jobs:
           version-file: .tool-versions
           version-type: strict
 
+      - name: Install libcap-dev [recommended by erlexec]
+        run: sudo apt-get install libcap-dev -y
+
       - name: Update project mix version
         run: |
           sed -i "s/.*version:.*/  version: \"${{ inputs.tag }}\",/" mix.exs
