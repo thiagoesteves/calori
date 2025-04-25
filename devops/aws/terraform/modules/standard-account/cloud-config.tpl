@@ -51,7 +51,7 @@ write_files:
         - name: "calori"
           language: "elixir"
           initial_port: 4000
-          replicas: 2
+          replicas: "${replicas}"
           env:
             - key: CALORI_PHX_HOST
               value: "${hostname}"
@@ -60,7 +60,7 @@ write_files:
             - key: CALORI_CLOUD_ENVIRONMENT
               value: "${account_name}"
             - key: CALORI_OTP_TLS_CERT_PATH
-              value:  "/usr/local/share/ca-certificates"
+              value: "/usr/local/share/ca-certificates"
             - key: CALORI_SECRETS_ADAPTER
               value: "aws"
             - key: CALORI_SECRETS_PATH

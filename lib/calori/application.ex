@@ -14,7 +14,7 @@ defmodule Calori.Application do
       # Start the Finch HTTP client for sending emails
       {Finch, name: Calori.Finch},
       # Start a worker by calling: Calori.Worker.start_link(arg)
-      # {Calori.Worker, arg},
+      Calori.Worker,
       # Start to serve requests, typically the last entry
       CaloriWeb.Endpoint
     ]
